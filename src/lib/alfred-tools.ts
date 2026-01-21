@@ -5,7 +5,7 @@
  */
 
 // Tipos válidos
-export type Destination = "tasks" | "agenda" | "leads" | "properties" | "profile" | "home";
+export type Destination = "tasks" | "agenda" | "leads" | "properties" | "profile" | "home" | "documents";
 export type TasksFilter = "today" | "pending" | "all";
 export type AgendaDate = "today" | "tomorrow" | "week";
 export type LeadsStatus = "hot" | "warm" | "cold" | "all";
@@ -46,6 +46,9 @@ export function navigate(params: NavigateParams): ToolResult {
 
         case "profile":
             return { route: "/profile" };
+
+        case "documents":
+            return { route: "/documents" };
 
         case "home":
             return { route: "/" };
