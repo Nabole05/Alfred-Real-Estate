@@ -103,6 +103,43 @@ export default function VoiceFAB() {
                     return { success: true, route: "/" };
                 },
 
+                // Nueva Tool: Integración CRM
+                start_crm_integration: async (params: any) => {
+                    const crm = params.crm_name || "su CRM";
+                    console.log("[ALFRED] start_crm_integration invoked for:", crm);
+                    setDebugMessage(`Iniciando conexión con ${crm}...`);
+                    handleAlfredNavigation("/profile");
+
+                    // Alfred narrará la guía a través del prompt del sistema
+                    setTimeout(() => setDebugMessage(null), 4000);
+                    return { success: true, crm: crm };
+                },
+
+                // Nueva Tool: Escaneo de Documentos
+                start_document_scan: async () => {
+                    console.log("[ALFRED] start_document_scan invoked");
+                    setDebugMessage(`Abriendo cámara para escaneo...`);
+                    handleAlfredNavigation("/documents");
+
+                    // Simular apertura de cámara a través de navegación
+                    setTimeout(() => setDebugMessage(null), 4000);
+                    return { success: true };
+                },
+
+                // Nueva Tool: Guardar Documento (después del escaneo)
+                save_scanned_document: async (params: any) => {
+                    const name = params.document_name;
+                    console.log("[ALFRED] save_scanned_document invoked:", name);
+                    setDebugMessage(`Guardando documento: ${name}...`);
+
+                    setTimeout(() => {
+                        setDebugMessage(`¡Documento "${name}" guardado!`);
+                        setTimeout(() => setDebugMessage(null), 2000);
+                    }, 2000);
+
+                    return { success: true, name: name };
+                },
+
                 // Nueva Tool: Datos para narración
                 get_summary_data: async (params: any) => {
                     console.log("[ALFRED] get_summary_data invoked", params);

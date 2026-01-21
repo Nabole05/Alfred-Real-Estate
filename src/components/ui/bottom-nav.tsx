@@ -1,13 +1,14 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Home, Building2, Users, User } from "lucide-react";
+import { Home, Building2, Users, User, FileText } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 
 const navItems = [
     { name: "Inicio", icon: Home, href: "/" },
     { name: "Propiedades", icon: Building2, href: "/properties" },
+    { name: "Documentos", icon: FileText, href: "/documents" },
     { name: "Leads", icon: Users, href: "/leads" },
     { name: "Perfil", icon: User, href: "/profile" },
 ];
@@ -18,7 +19,7 @@ export function BottomNav() {
     return (
         <nav className="fixed bottom-0 left-0 right-0 z-40 pb-safe">
             <div className="relative mx-4 mb-4">
-                <div className="bg-zinc-950/80 backdrop-blur-2xl border border-white/[0.08] rounded-[20px] px-2 py-3.5 shadow-2xl">
+                <div className="bg-zinc-950/80 backdrop-blur-2xl border border-white/[0.08] rounded-[20px] px-1 py-3.5 shadow-2xl">
                     <div className="flex items-center justify-around">
                         {navItems.map((item) => {
                             const isActive = pathname === item.href;
