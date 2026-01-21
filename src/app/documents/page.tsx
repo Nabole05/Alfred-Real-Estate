@@ -2,24 +2,25 @@
 
 import { motion } from "framer-motion";
 import { FileText, Camera, Search, MoreVertical, Clock, CheckCircle2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
 const MOCK_DOCUMENTS = [
     { id: 1, name: "Contrato Recoleta - Borrador", type: "PDF", date: "Hace 2 horas", size: "2.4 MB", status: "pending" },
     { id: 2, name: "Escritura Palermo - Final", type: "PDF", date: "Ayer", size: "1.8 MB", status: "completed" },
-    { id: 3, name: "Resumen Escpensa Belgrano", type: "JPG", date: "15 Ene", size: "4.2 MB", status: "completed" },
+    { id: 3, name: "Resumen Expensas Belgrano", type: "JPG", date: "15 Ene", size: "4.2 MB", status: "completed" },
 ];
 
-export default function DocumentsPage() {
+function DocumentsContent() {
     const [isScanning, setIsScanning] = useState(false);
     const searchParams = useSearchParams();
+    const action = searchParams.get("action");
 
     useEffect(() => {
-        if (searchParams.get("action") === "scan") {
+        if (action === "scan") {
             setIsScanning(true);
         }
-    }, [searchParams]);
+    }, [action]);
 
     return (
         <main className="min-h-screen bg-black text-white pb-32 pt-12 px-6">
@@ -146,5 +147,13 @@ export default function DocumentsPage() {
                 }
             `}</style>
         </main>
+    );
+}
+
+export default function DocumentsPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-black" />}>
+            <DocumentsContent />
+        </Suspense>
     );
 }
