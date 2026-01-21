@@ -5,7 +5,7 @@ import { Flame, User, Phone, ArrowLeft, Mail } from "lucide-react";
 import { GlassCard } from "@/components/ui/glass-card";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, Suspense } from "react";
 
 // Tipos
 type LeadStatus = "hot" | "warm" | "cold";
@@ -57,7 +57,7 @@ const ALL_LEADS: Lead[] = [
     }
 ];
 
-export default function LeadsPage() {
+function LeadsPageContent() {
     const searchParams = useSearchParams();
     const statusFilter = searchParams.get("status") || "all";
 
@@ -197,6 +197,14 @@ export default function LeadsPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function LeadsPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen px-5 pt-8 pb-32"><div className="max-w-md mx-auto"><p className="text-zinc-500">Cargando...</p></div></div>}>
+            <LeadsPageContent />
+        </Suspense>
     );
 }
 

@@ -5,7 +5,7 @@ import { Calendar, Clock, MapPin, ArrowLeft } from "lucide-react";
 import { GlassCard } from "@/components/ui/glass-card";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, Suspense } from "react";
 
 // Tipos
 type Appointment = {
@@ -56,7 +56,7 @@ const ALL_APPOINTMENTS: Appointment[] = [
     }
 ];
 
-export default function AgendaPage() {
+function AgendaPageContent() {
     const searchParams = useSearchParams();
     const dateFilter = searchParams.get("date") || "today";
 
@@ -164,6 +164,14 @@ export default function AgendaPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function AgendaPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen px-5 pt-8 pb-32"><div className="max-w-md mx-auto"><p className="text-zinc-500">Cargando...</p></div></div>}>
+            <AgendaPageContent />
+        </Suspense>
     );
 }
 

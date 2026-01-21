@@ -5,7 +5,7 @@ import { CheckCircle2, Circle, ArrowLeft, AlertCircle } from "lucide-react";
 import { GlassCard } from "@/components/ui/glass-card";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, Suspense } from "react";
 
 // Tipos
 type TaskPriority = "high" | "medium" | "low";
@@ -56,7 +56,7 @@ const ALL_TASKS: Task[] = [
     },
 ];
 
-export default function TasksPage() {
+function TasksPageContent() {
     const searchParams = useSearchParams();
     const filter = searchParams.get("filter") || "all";
 
@@ -125,15 +125,15 @@ export default function TasksPage() {
                             >
                                 <GlassCard
                                     className={`p-4 ${task.priority === "high" && !task.completed
-                                            ? "border border-orange-500/30"
-                                            : ""
+                                        ? "border border-orange-500/30"
+                                        : ""
                                         }`}
                                 >
                                     <div className="flex items-center gap-3">
                                         <div
                                             className={`p-2 rounded-lg ${task.completed
-                                                    ? "bg-emerald-500/10 border border-emerald-500/20"
-                                                    : "bg-white/5 border border-white/10"
+                                                ? "bg-emerald-500/10 border border-emerald-500/20"
+                                                : "bg-white/5 border border-white/10"
                                                 }`}
                                         >
                                             {task.completed ? (
@@ -146,8 +146,8 @@ export default function TasksPage() {
                                         <div className="flex-1">
                                             <p
                                                 className={`text-sm font-medium ${task.completed
-                                                        ? "text-zinc-500 line-through"
-                                                        : "text-white"
+                                                    ? "text-zinc-500 line-through"
+                                                    : "text-white"
                                                     }`}
                                             >
                                                 {task.title}
@@ -170,6 +170,14 @@ export default function TasksPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function TasksPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen px-5 pt-8 pb-32"><div className="max-w-md mx-auto"><p className="text-zinc-500">Cargando...</p></div></div>}>
+            <TasksPageContent />
+        </Suspense>
     );
 }
 
