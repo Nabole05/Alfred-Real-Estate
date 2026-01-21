@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { FileText, Camera, Search, MoreVertical, Clock, CheckCircle2, X } from "lucide-react";
 import { useState, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 
 const MOCK_DOCUMENTS = [
     { id: 1, name: "Contrato Recoleta - Borrador", type: "PDF", date: "Hace 2 horas", size: "2.4 MB", status: "pending" },
@@ -14,25 +14,35 @@ const MOCK_DOCUMENTS = [
 function DocumentsContent() {
     const [isScanning, setIsScanning] = useState(false);
     const searchParams = useSearchParams();
+    const router = useRouter();
 
-    // Sync with URL parameter
+    // Sincronización robusta con el parámetro de la URL
     useEffect(() => {
         const action = searchParams.get("action");
-        if (action === "scan") {
-            console.log("[DOCUMENTS] Voice scan trigger detected");
+        const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+        const fallbackAction = urlParams?.get("action");
+
+        console.log("[ALFRED] Detectando acción de escaneo:", { action, fallbackAction });
+
+        if (action === "scan" || fallbackAction === "scan") {
             setIsScanning(true);
         }
     }, [searchParams]);
 
+    const handleCloseScanner = () => {
+        setIsScanning(false);
+        // Limpiamos el query param al cerrar
+        router.push('/documents', { scroll: false });
+    };
+
     return (
-        <main className="min-h-screen bg-black text-white pb-32 pt-12 px-6">
+        <main className="min-h-screen bg-black text-white pb-32 pt-12 px-6 overflow-x-hidden">
             {/* Header Area */}
             <div className="flex flex-col gap-2 mb-8 mt-4">
                 <motion.h1
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     className="text-4xl font-bold tracking-tight text-white focus:outline-none"
-                    tabIndex={0}
                 >
                     Documentos
                 </motion.h1>
@@ -44,7 +54,7 @@ function DocumentsContent() {
                 <motion.button
                     whileTap={{ scale: 0.98 }}
                     onClick={() => setIsScanning(true)}
-                    className="relative overflow-hidden group p-6 rounded-3xl bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-4 text-left shadow-[0_0_20px_rgba(16,185,129,0.05)]"
+                    className="relative overflow-hidden group p-6 rounded-3xl bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-4 text-left shadow-[0_0_20px_rgba(16,185,129,0.05)] active:bg-emerald-500/20 transition-colors"
                 >
                     <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center text-emerald-400">
                         <Camera size={24} />
@@ -54,16 +64,6 @@ function DocumentsContent() {
                         <p className="text-zinc-500 text-xs">Captura documentos con tu cámara</p>
                     </div>
                 </motion.button>
-            </div>
-
-            {/* Search Bar */}
-            <div className="relative mb-6">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-zinc-500" size={18} />
-                <input
-                    type="text"
-                    placeholder="Buscar por nombre o propiedad..."
-                    className="w-full bg-zinc-900/50 border border-white/5 rounded-2xl py-3.5 pl-12 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-white/20 transition-all appearance-none"
-                />
             </div>
 
             {/* Document List */}
@@ -78,7 +78,7 @@ function DocumentsContent() {
                             key={doc.id}
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: idx * 0.1 }}
+                            transition={{ delay: idx * 0.05 }}
                             className="bg-zinc-900/40 backdrop-blur-sm border border-white/[0.05] rounded-[22px] p-4 flex items-center gap-4 active:bg-zinc-800/60 transition-colors"
                         >
                             <div className="w-12 h-12 rounded-xl bg-zinc-800 flex items-center justify-center text-zinc-400">
@@ -97,9 +97,6 @@ function DocumentsContent() {
                             ) : (
                                 <Clock className="text-amber-500/60" size={16} />
                             )}
-                            <button className="text-zinc-600 p-1">
-                                <MoreVertical size={16} />
-                            </button>
                         </motion.div>
                     ))}
                 </div>
@@ -109,15 +106,16 @@ function DocumentsContent() {
             <AnimatePresence>
                 {isScanning && (
                     <motion.div
-                        initial={{ opacity: 0, scale: 1.1 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 1.1 }}
-                        className="fixed inset-0 z-[200] bg-black flex flex-col pt-12 pb-20 px-6 overflow-hidden"
+                        initial={{ opacity: 0, y: "100%" }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: "100%" }}
+                        transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                        className="fixed inset-0 z-[500] bg-black flex flex-col pt-12 pb-20 px-6 touch-none"
                     >
                         <div className="flex items-center justify-between mb-8">
                             <button
-                                onClick={() => setIsScanning(false)}
-                                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white"
+                                onClick={handleCloseScanner}
+                                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white active:bg-white/20"
                             >
                                 <X size={20} />
                             </button>
@@ -125,18 +123,18 @@ function DocumentsContent() {
                             <div className="w-10" />
                         </div>
 
-                        <div className="flex-1 rounded-[40px] border-2 border-white/20 bg-zinc-900/50 relative overflow-hidden flex items-center justify-center group">
+                        <div className="flex-1 rounded-[40px] border-2 border-white/20 bg-zinc-900/50 relative overflow-hidden flex items-center justify-center">
                             {/* Scanning Animation */}
                             <motion.div
                                 animate={{ top: ["10%", "90%", "10%"] }}
-                                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                                className="absolute inset-x-4 h-[2px] bg-emerald-400 shadow-[0_0_15px_#10b981] z-20"
+                                transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                                className="absolute inset-x-4 h-[2px] bg-emerald-400 shadow-[0_0_15px_#10b981] z-10"
                             />
 
                             <div className="text-zinc-500 text-sm italic text-center px-12">
                                 <Camera size={40} className="mx-auto mb-4 opacity-20" />
-                                <p>Vista de cámara activa...</p>
-                                <p className="text-[10px] mt-2 non-italic uppercase tracking-wider">Enfoca el documento</p>
+                                <p>Cámara activada</p>
+                                <p className="text-[10px] mt-2 non-italic uppercase tracking-wider opacity-60">Enfoca el documento</p>
                             </div>
                         </div>
 
@@ -144,12 +142,12 @@ function DocumentsContent() {
                             <motion.button
                                 whileTap={{ scale: 0.9 }}
                                 onClick={() => {
-                                    setIsScanning(false);
-                                    alert("Documento capturado. Alfred te preguntará el nombre por voz.");
+                                    alert("¡Capturado! Alfred pronto podrá procesar esta imagen.");
+                                    handleCloseScanner();
                                 }}
-                                className="w-20 h-20 rounded-full border-4 border-white flex items-center justify-center bg-transparent"
+                                className="w-20 h-20 rounded-full border-4 border-white flex items-center justify-center bg-transparent active:border-zinc-400"
                             >
-                                <div className="w-16 h-16 rounded-full bg-white" />
+                                <div className="w-16 h-16 rounded-full bg-white active:bg-zinc-300" />
                             </motion.button>
                             <p className="text-xs text-zinc-500 uppercase tracking-widest font-medium">Capturar</p>
                         </div>
@@ -162,7 +160,7 @@ function DocumentsContent() {
 
 export default function DocumentsPage() {
     return (
-        <Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center text-zinc-500 italic text-xs">Cargando Alfred Documentos...</div>}>
+        <Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center"><p className="text-zinc-500 italic text-xs">Entrando a Documentos...</p></div>}>
             <DocumentsContent />
         </Suspense>
     );
