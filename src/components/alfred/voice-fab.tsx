@@ -153,7 +153,7 @@ export default function VoiceFAB() {
                 initial={{ opacity: 0, y: 100 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3, duration: 0.6, type: "spring" }}
-                className="fixed bottom-20 left-1/2 transform -translate-x-1/2 z-[100]"
+                className="fixed bottom-36 left-1/2 transform -translate-x-1/2 z-[100]"
             >
                 <div className="relative">
                     {/* Idle State: Subtle breathing glow */}
@@ -321,7 +321,7 @@ export default function VoiceFAB() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 20 }}
-                        className="fixed bottom-[calc(5rem+120px)] left-1/2 transform -translate-x-1/2 z-[90]"
+                        className="fixed bottom-[calc(9rem+120px)] left-1/2 transform -translate-x-1/2 z-[90]"
                     >
                         <div className="bg-black/90 backdrop-blur-2xl border border-white/20 rounded-full px-5 py-2.5 shadow-lg">
                             <motion.p
