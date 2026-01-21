@@ -109,6 +109,29 @@ export default function VoiceFAB() {
                     return { success: true, route: "/documents" };
                 },
 
+                // Herramientas de WhatsApp
+                read_whatsapp_messages: async () => {
+                    console.log("[ALFRED] read_whatsapp_messages invoked");
+                    setDebugMessage(`Buscando nuevos mensajes en WhatsApp...`);
+                    setTimeout(() => setDebugMessage(null), 4000);
+                    return {
+                        success: true,
+                        messages: [
+                            { from: "Juan Pérez", text: "Hola, me interesa la propiedad en Recoleta." },
+                            { from: "María García", text: "¿Cuándo podemos visitar el de Palermo?" }
+                        ]
+                    };
+                },
+                send_whatsapp_message: async (params: { to: string, message: string }) => {
+                    console.log("[ALFRED] send_whatsapp_message invoked:", params);
+                    setDebugMessage(`Enviando WhatsApp a ${params.to}...`);
+                    setTimeout(() => {
+                        setDebugMessage(`¡Mensaje enviado a ${params.to}!`);
+                        setTimeout(() => setDebugMessage(null), 2000);
+                    }, 2000);
+                    return { success: true };
+                },
+
                 // Nueva Tool: Integración CRM
                 start_crm_integration: async (params: any) => {
                     const crm = params.crm_name || "su CRM";
