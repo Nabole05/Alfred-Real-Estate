@@ -119,7 +119,7 @@ export default function VoiceFAB() {
                 start_document_scan: async () => {
                     console.log("[ALFRED] start_document_scan invoked");
                     setDebugMessage(`Abriendo cámara para escaneo...`);
-                    handleAlfredNavigation("/documents");
+                    handleAlfredNavigation("/documents?action=scan");
 
                     // Simular apertura de cámara a través de navegación
                     setTimeout(() => setDebugMessage(null), 4000);
