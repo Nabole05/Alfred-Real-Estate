@@ -12,6 +12,7 @@ type VoiceStatus = "idle" | "connecting" | "listening" | "responding";
 export default function VoiceFAB() {
     const [conversation, setConversation] = useState<Conversation | null>(null);
     const [status, setStatus] = useState<VoiceStatus>("idle");
+    const [debugMessage, setDebugMessage] = useState<string | null>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
     // Hook para manejar navegación
@@ -50,14 +51,16 @@ export default function VoiceFAB() {
 
     const startConversation = async () => {
         try {
-            const agentId = process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID;
+            // Fallback directo por si las variables de Vercel fallan
+            const agentId = process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID || "agent_7301kfcf2akyfq0t3mz0bqf2n0hd";
 
             if (!agentId) {
-                console.error("Agent ID no configurado");
+                setDebugMessage("Error: Agent ID no encontrado");
                 return;
             }
 
             setStatus("connecting");
+            setDebugMessage("Conectando con Alfred...");
 
             // Client Tools: Compatibilidad total con nombres específicos y unificados
             const clientTools: Record<string, any> = {
@@ -92,8 +95,11 @@ export default function VoiceFAB() {
                     },
                     handler: async (params: any) => {
                         console.log("[ALFRED] Navigate tool invoked with:", params);
+                        setDebugMessage(`Navigating to: ${params.destination}...`);
                         const result = ALFRED_TOOLS.navigate(params);
                         handleAlfredNavigation(result.route);
+
+                        setTimeout(() => setDebugMessage(null), 3000);
                         return { success: true, route: result.route };
                     }
                 },
@@ -108,8 +114,10 @@ export default function VoiceFAB() {
                         }
                     },
                     handler: async (params: any) => {
+                        setDebugMessage(`Navigating to tasks...`);
                         const result = ALFRED_TOOLS.navigate({ destination: "tasks", ...params });
                         handleAlfredNavigation(result.route);
+                        setTimeout(() => setDebugMessage(null), 3000);
                         return { success: true, route: result.route };
                     }
                 },
@@ -122,8 +130,10 @@ export default function VoiceFAB() {
                         }
                     },
                     handler: async (params: any) => {
+                        setDebugMessage(`Navigating to leads...`);
                         const result = ALFRED_TOOLS.navigate({ destination: "leads", ...params });
                         handleAlfredNavigation(result.route);
+                        setTimeout(() => setDebugMessage(null), 3000);
                         return { success: true, route: result.route };
                     }
                 },
@@ -136,15 +146,19 @@ export default function VoiceFAB() {
                         }
                     },
                     handler: async (params: any) => {
+                        setDebugMessage(`Navigating to agenda...`);
                         const result = ALFRED_TOOLS.navigate({ destination: "agenda", ...params });
                         handleAlfredNavigation(result.route);
+                        setTimeout(() => setDebugMessage(null), 3000);
                         return { success: true, route: result.route };
                     }
                 },
                 navigate_to_home: {
                     description: "Vuelve al inicio.",
                     handler: async () => {
+                        setDebugMessage(`Navigating home...`);
                         handleAlfredNavigation("/");
+                        setTimeout(() => setDebugMessage(null), 3000);
                         return { success: true, route: "/" };
                     }
                 },
@@ -160,7 +174,8 @@ export default function VoiceFAB() {
                     },
                     handler: async (params: any) => {
                         console.log("[ALFRED] get_summary_data invoked", params);
-                        // Por ahora devolvemos mock, en Sprint 2 traemos de base de datos
+                        setDebugMessage(`Fetching summary data...`);
+                        setTimeout(() => setDebugMessage(null), 2000);
                         return {
                             success: true,
                             data: {
@@ -408,6 +423,24 @@ export default function VoiceFAB() {
                                 {status === "listening" && "Te estoy escuchando"}
                                 {status === "responding" && "Alfred hablando..."}
                             </motion.p>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+            {/* Debug Message Toast */}
+            <AnimatePresence>
+                {debugMessage && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 50 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        className="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-[200]"
+                    >
+                        <div className="bg-white/10 backdrop-blur-3xl border border-white/20 rounded-2xl px-6 py-4 shadow-2xl">
+                            <p className="text-sm font-semibold text-white tracking-tight flex items-center gap-3">
+                                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                                {debugMessage}
+                            </p>
                         </div>
                     </motion.div>
                 )}
