@@ -102,6 +102,12 @@ export default function VoiceFAB() {
                     setTimeout(() => setDebugMessage(null), 3000);
                     return { success: true, route: "/" };
                 },
+                navigate_to_documents: async () => {
+                    setDebugMessage(`Navigating to documents...`);
+                    handleAlfredNavigation("/documents");
+                    setTimeout(() => setDebugMessage(null), 3000);
+                    return { success: true, route: "/documents" };
+                },
 
                 // Nueva Tool: Integración CRM
                 start_crm_integration: async (params: any) => {
