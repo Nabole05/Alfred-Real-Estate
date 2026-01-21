@@ -64,6 +64,15 @@ export function navigate_to_home(): ToolResult {
 }
 
 /**
+ * Navega al perfil de usuario
+ */
+export function navigate_to_profile(): ToolResult {
+    return {
+        route: "/profile"
+    };
+}
+
+/**
  * Mapa de todas las tools disponibles para fácil ejecución
  */
 export const ALFRED_TOOLS = {
@@ -71,7 +80,8 @@ export const ALFRED_TOOLS = {
     navigate_to_agenda,
     navigate_to_leads,
     navigate_to_properties,
-    navigate_to_home
+    navigate_to_home,
+    navigate_to_profile
 } as const;
 
 export type ToolName = keyof typeof ALFRED_TOOLS;
