@@ -59,8 +59,9 @@ export default function VoiceFAB() {
 
             setStatus("connecting");
 
-            // Client Tool unificada: navigate
+            // Client Tools: Compatibilidad total con nombres específicos y unificados
             const clientTools: Record<string, any> = {
+                // Tool unificada (Recomendada)
                 navigate: {
                     description: "Navega dentro de la app Alfred a diferentes secciones. Recibe destination (tasks/agenda/leads/properties/profile/home) y parámetros opcionales según el destino.",
                     parameters: {
@@ -94,6 +95,80 @@ export default function VoiceFAB() {
                         const result = ALFRED_TOOLS.navigate(params);
                         handleAlfredNavigation(result.route);
                         return { success: true, route: result.route };
+                    }
+                },
+
+                // Aliases para compatibilidad con prompt viejo
+                navigate_to_tasks: {
+                    description: "Navega a la sección de tareas. Filtros: today, pending, all.",
+                    parameters: {
+                        type: "object",
+                        properties: {
+                            filter: { type: "string", enum: ["today", "pending", "all"] }
+                        }
+                    },
+                    handler: async (params: any) => {
+                        const result = ALFRED_TOOLS.navigate({ destination: "tasks", ...params });
+                        handleAlfredNavigation(result.route);
+                        return { success: true, route: result.route };
+                    }
+                },
+                navigate_to_leads: {
+                    description: "Navega a la sección de leads. Filtros: hot, warm, cold, all.",
+                    parameters: {
+                        type: "object",
+                        properties: {
+                            status: { type: "string", enum: ["hot", "warm", "cold", "all"] }
+                        }
+                    },
+                    handler: async (params: any) => {
+                        const result = ALFRED_TOOLS.navigate({ destination: "leads", ...params });
+                        handleAlfredNavigation(result.route);
+                        return { success: true, route: result.route };
+                    }
+                },
+                navigate_to_agenda: {
+                    description: "Navega a la agenda.",
+                    parameters: {
+                        type: "object",
+                        properties: {
+                            date: { type: "string", enum: ["today", "tomorrow", "week"] }
+                        }
+                    },
+                    handler: async (params: any) => {
+                        const result = ALFRED_TOOLS.navigate({ destination: "agenda", ...params });
+                        handleAlfredNavigation(result.route);
+                        return { success: true, route: result.route };
+                    }
+                },
+                navigate_to_home: {
+                    description: "Vuelve al inicio.",
+                    handler: async () => {
+                        handleAlfredNavigation("/");
+                        return { success: true, route: "/" };
+                    }
+                },
+
+                // Nueva Tool: Datos para narración
+                get_summary_data: {
+                    description: "Obtiene métricas reales de tareas y leads para narrar al usuario.",
+                    parameters: {
+                        type: "object",
+                        properties: {
+                            metric: { type: "string", enum: ["all", "leads", "tasks"] }
+                        }
+                    },
+                    handler: async (params: any) => {
+                        console.log("[ALFRED] get_summary_data invoked", params);
+                        // Por ahora devolvemos mock, en Sprint 2 traemos de base de datos
+                        return {
+                            success: true,
+                            data: {
+                                leads: { total: 4, hot: 1, top: "María González" },
+                                tasks: { total: 3, urgent: 2, top: "Enviar contrato Recoleta" },
+                                overview: "Tienes 1 lead caliente y 2 tareas urgentes para hoy."
+                            }
+                        };
                     }
                 }
             };
