@@ -1,87 +1,64 @@
 /**
- * Alfred Navigation Tools
+ * Alfred Navigation Tools - Unified Approach
  * 
- * Define las herramientas (tools) que el asistente puede ejecutar
- * para navegar por la aplicación. Cada tool devuelve solo la ruta.
+ * Single navigate function that handles all navigation with parameters
  */
 
-// Tipos de parámetros para cada tool
+// Tipos válidos
+export type Destination = "tasks" | "agenda" | "leads" | "properties" | "profile" | "home";
 export type TasksFilter = "today" | "pending" | "all";
 export type AgendaDate = "today" | "tomorrow" | "week";
 export type LeadsStatus = "hot" | "warm" | "cold" | "all";
 
-// Tipo de retorno estándar de todas las tools
+export type NavigateParams = {
+    destination: Destination;
+    filter?: TasksFilter;
+    date?: AgendaDate;
+    status?: LeadsStatus;
+};
+
 export type ToolResult = {
     route: string;
 };
 
 /**
- * Navega a la sección de tareas
+ * Función unificada de navegación
+ * Maneja todos los destinos con parámetros opcionales
  */
-export function navigate_to_tasks(params?: { filter?: TasksFilter }): ToolResult {
-    const filter = params?.filter || "all";
-    return {
-        route: `/tasks?filter=${filter}`
-    };
+export function navigate(params: NavigateParams): ToolResult {
+    const { destination, filter, date, status } = params;
+
+    switch (destination) {
+        case "tasks":
+            const taskFilter = filter || "all";
+            return { route: `/tasks?filter=${taskFilter}` };
+
+        case "agenda":
+            const agendaDate = date || "today";
+            return { route: `/agenda?date=${agendaDate}` };
+
+        case "leads":
+            const leadStatus = status || "all";
+            return { route: `/leads?status=${leadStatus}` };
+
+        case "properties":
+            return { route: "/properties" };
+
+        case "profile":
+            return { route: "/profile" };
+
+        case "home":
+            return { route: "/" };
+
+        default:
+            // Fallback seguro
+            return { route: "/" };
+    }
 }
 
 /**
- * Navega a la agenda/calendario
- */
-export function navigate_to_agenda(params?: { date?: AgendaDate }): ToolResult {
-    const date = params?.date || "today";
-    return {
-        route: `/agenda?date=${date}`
-    };
-}
-
-/**
- * Navega a la lista de leads
- */
-export function navigate_to_leads(params?: { status?: LeadsStatus }): ToolResult {
-    const status = params?.status || "all";
-    return {
-        route: `/leads?status=${status}`
-    };
-}
-
-/**
- * Navega al catálogo de propiedades
- */
-export function navigate_to_properties(): ToolResult {
-    return {
-        route: "/properties"
-    };
-}
-
-/**
- * Navega al home/dashboard
- */
-export function navigate_to_home(): ToolResult {
-    return {
-        route: "/"
-    };
-}
-
-/**
- * Navega al perfil de usuario
- */
-export function navigate_to_profile(): ToolResult {
-    return {
-        route: "/profile"
-    };
-}
-
-/**
- * Mapa de todas las tools disponibles para fácil ejecución
+ * Export para compatibilidad
  */
 export const ALFRED_TOOLS = {
-    navigate_to_tasks,
-    navigate_to_agenda,
-    navigate_to_leads,
-    navigate_to_properties,
-    navigate_to_home,
-    navigate_to_profile
+    navigate
 } as const;
-
-export type ToolName = keyof typeof ALFRED_TOOLS;

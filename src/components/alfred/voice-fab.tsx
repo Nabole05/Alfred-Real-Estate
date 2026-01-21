@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mic } from "lucide-react";
 import { Conversation } from "@elevenlabs/client";
-import { ALFRED_TOOLS, type ToolName } from "@/lib/alfred-tools";
+import { ALFRED_TOOLS } from "@/lib/alfred-tools";
 import { useAlfredNavigation } from "@/hooks/use-alfred-navigation";
 
 type VoiceStatus = "idle" | "connecting" | "listening" | "responding";
@@ -59,94 +59,39 @@ export default function VoiceFAB() {
 
             setStatus("connecting");
 
-            // Configurar client tools con handlers que ejecutan navegación
+            // Client Tool unificada: navigate
             const clientTools: Record<string, any> = {
-                navigate_to_tasks: {
-                    description: "Navega a la lista de tareas. Usa filter='today' para hoy, 'pending' para pendientes, 'all' para todas",
+                navigate: {
+                    description: "Navega dentro de la app Alfred a diferentes secciones. Recibe destination (tasks/agenda/leads/properties/profile/home) y parámetros opcionales según el destino.",
                     parameters: {
                         type: "object",
                         properties: {
+                            destination: {
+                                type: "string",
+                                enum: ["tasks", "agenda", "leads", "properties", "profile", "home"],
+                                description: "Destino de navegación"
+                            },
                             filter: {
                                 type: "string",
                                 enum: ["today", "pending", "all"],
-                                description: "Filtro de tareas"
-                            }
-                        }
-                    },
-                    handler: async (params: any) => {
-                        const result = ALFRED_TOOLS.navigate_to_tasks(params);
-                        handleAlfredNavigation(result.route);
-                        return { success: true, route: result.route };
-                    }
-                },
-                navigate_to_agenda: {
-                    description: "Abre la agenda. Usa date='today' para hoy, 'tomorrow' para mañana, 'week' para esta semana",
-                    parameters: {
-                        type: "object",
-                        properties: {
+                                description: "Filtro para tasks (opcional)"
+                            },
                             date: {
                                 type: "string",
                                 enum: ["today", "tomorrow", "week"],
-                                description: "Rango de fecha"
-                            }
-                        }
-                    },
-                    handler: async (params: any) => {
-                        const result = ALFRED_TOOLS.navigate_to_agenda(params);
-                        handleAlfredNavigation(result.route);
-                        return { success: true, route: result.route };
-                    }
-                },
-                navigate_to_leads: {
-                    description: "Muestra leads. Usa status='hot' para calientes, 'warm' para tibios, 'cold' para fríos, 'all' para todos",
-                    parameters: {
-                        type: "object",
-                        properties: {
+                                description: "Rango de fecha para agenda (opcional)"
+                            },
                             status: {
                                 type: "string",
                                 enum: ["hot", "warm", "cold", "all"],
-                                description: "Estado del lead"
+                                description: "Estado para leads (opcional)"
                             }
-                        }
+                        },
+                        required: ["destination"]
                     },
                     handler: async (params: any) => {
-                        const result = ALFRED_TOOLS.navigate_to_leads(params);
-                        handleAlfredNavigation(result.route);
-                        return { success: true, route: result.route };
-                    }
-                },
-                navigate_to_properties: {
-                    description: "Abre el catálogo de propiedades",
-                    parameters: {
-                        type: "object",
-                        properties: {}
-                    },
-                    handler: async () => {
-                        const result = ALFRED_TOOLS.navigate_to_properties();
-                        handleAlfredNavigation(result.route);
-                        return { success: true, route: result.route };
-                    }
-                },
-                navigate_to_home: {
-                    description: "Vuelve al dashboard principal",
-                    parameters: {
-                        type: "object",
-                        properties: {}
-                    },
-                    handler: async () => {
-                        const result = ALFRED_TOOLS.navigate_to_home();
-                        handleAlfredNavigation(result.route);
-                        return { success: true, route: result.route };
-                    }
-                },
-                navigate_to_profile: {
-                    description: "Abre el perfil de usuario",
-                    parameters: {
-                        type: "object",
-                        properties: {}
-                    },
-                    handler: async () => {
-                        const result = ALFRED_TOOLS.navigate_to_profile();
+                        console.log("[ALFRED] Navigate tool invoked with:", params);
+                        const result = ALFRED_TOOLS.navigate(params);
                         handleAlfredNavigation(result.route);
                         return { success: true, route: result.route };
                     }
