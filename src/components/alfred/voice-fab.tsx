@@ -60,7 +60,7 @@ export default function VoiceFAB() {
             }
 
             setStatus("connecting");
-            setDebugMessage("Conectando con Alfred...");
+            setDebugMessage("Iniciando micrófono y conexión...");
 
             // Client Tools: Compatibilidad total con nombres específicos y unificados
             const clientTools: Record<string, any> = {
@@ -194,16 +194,26 @@ export default function VoiceFAB() {
                 clientTools: clientTools,
                 onConnect: () => {
                     console.log("[VoiceFAB] Conversación conectada con tools");
+                    setDebugMessage("¡Conectado! Ya puedes hablar.");
                     setStatus("listening");
+                    // Ocultar mensaje de éxito después de un momento
+                    setTimeout(() => setDebugMessage(null), 2500);
                 },
                 onDisconnect: () => {
+                    console.log("[VoiceFAB] Sesión terminada");
+                    setDebugMessage("Sesión finalizada");
                     setStatus("idle");
+                    setTimeout(() => setDebugMessage(null), 2000);
                 },
                 onError: (error) => {
                     console.error("ALFRED error:", error);
+                    const err = error as any;
+                    const errorMsg = typeof err === 'string' ? err : err.message || "Error de conexión";
+                    setDebugMessage(`ALFRED Error: ${errorMsg}`);
                     setStatus("idle");
                 },
                 onModeChange: (mode) => {
+                    console.log("[VoiceFAB] Mode change:", mode.mode);
                     if (mode.mode === "speaking") {
                         setStatus("responding");
                         playSubtleFeedback();
