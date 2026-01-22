@@ -2,26 +2,36 @@
 
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic } from "lucide-react";
+import { Mic, FileText, MessageSquare, Link as LinkIcon, Compass, X, AlertCircle } from "lucide-react";
 import { Conversation } from "@elevenlabs/client";
 import { ALFRED_TOOLS } from "@/lib/alfred-tools";
 import { useAlfredNavigation } from "@/hooks/use-alfred-navigation";
-
-type VoiceStatus = "idle" | "connecting" | "listening" | "responding";
+import { useAlfredStore } from "@/lib/store/alfred-store";
+import { WhatsAppService } from "@/lib/services/whatsapp-service";
+import { DocumentService } from "@/lib/services/document-service";
+import { CRMService, CRMType } from "@/lib/services/crm-service";
 
 export default function VoiceFAB() {
     const [conversation, setConversation] = useState<Conversation | null>(null);
-    const [status, setStatus] = useState<VoiceStatus>("idle");
-    const [debugMessage, setDebugMessage] = useState<string | null>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
+
+    // Global Store
+    const {
+        status,
+        setStatus,
+        debugMessage,
+        setDebugMessage,
+        setLastNavigation,
+        currentAction,
+        setCurrentAction
+    } = useAlfredStore();
 
     // Hook para manejar navegación
     const { handleAlfredNavigation } = useAlfredNavigation();
 
     useEffect(() => {
-        // Initialize subtle audio feedback (very subtle, non-intrusive)
         audioRef.current = new Audio();
-        audioRef.current.volume = 0.15; // Very subtle volume
+        audioRef.current.volume = 0.15;
 
         return () => {
             if (conversation) {
@@ -31,7 +41,6 @@ export default function VoiceFAB() {
     }, [conversation]);
 
     const playSubtleFeedback = () => {
-        // Create a very subtle beep using Web Audio API
         const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
@@ -39,10 +48,10 @@ export default function VoiceFAB() {
         oscillator.connect(gainNode);
         gainNode.connect(audioContext.destination);
 
-        oscillator.frequency.value = 800; // Soft, high-pitched tone
+        oscillator.frequency.value = 800;
         oscillator.type = "sine";
 
-        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime); // Very quiet
+        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
         gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
 
         oscillator.start(audioContext.currentTime);
@@ -51,7 +60,6 @@ export default function VoiceFAB() {
 
     const startConversation = async () => {
         try {
-            // Fallback directo por si las variables de Vercel fallan
             const agentId = process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID || "agent_7301kfcf2akyfq0t3mz0bqf2n0hd";
 
             if (!agentId) {
@@ -62,117 +70,94 @@ export default function VoiceFAB() {
             setStatus("connecting");
             setDebugMessage("Iniciando micrófono y conexión...");
 
-            // Client Tools: Deben ser funciones directas para el SDK de ElevenLabs
             const clientTools: Record<string, any> = {
-                // Tool unificada
                 navigate: async (params: any) => {
-                    console.log("[ALFRED] Navigate tool invoked with:", params);
-                    setDebugMessage(`Navigating to: ${params.destination}...`);
+                    console.log("[ALFRED] Navigate tool invoked:", params);
+                    setCurrentAction({
+                        title: "Navegando",
+                        description: `Abriendo sección: ${params.destination}`,
+                        icon: "nav"
+                    });
                     const result = ALFRED_TOOLS.navigate(params);
                     handleAlfredNavigation(result.route);
-                    setTimeout(() => setDebugMessage(null), 3000);
+                    setLastNavigation(result.route);
+                    setTimeout(() => setCurrentAction(null), 3000);
                     return { success: true, route: result.route };
                 },
 
-                // Aliases para compatibilidad
-                navigate_to_tasks: async (params: any) => {
-                    setDebugMessage(`Navigating to tasks...`);
-                    const result = ALFRED_TOOLS.navigate({ destination: "tasks", ...params });
-                    handleAlfredNavigation(result.route);
-                    setTimeout(() => setDebugMessage(null), 3000);
-                    return { success: true, route: result.route };
-                },
-                navigate_to_leads: async (params: any) => {
-                    setDebugMessage(`Navigating to leads...`);
-                    const result = ALFRED_TOOLS.navigate({ destination: "leads", ...params });
-                    handleAlfredNavigation(result.route);
-                    setTimeout(() => setDebugMessage(null), 3000);
-                    return { success: true, route: result.route };
-                },
-                navigate_to_agenda: async (params: any) => {
-                    setDebugMessage(`Navigating to agenda...`);
-                    const result = ALFRED_TOOLS.navigate({ destination: "agenda", ...params });
-                    handleAlfredNavigation(result.route);
-                    setTimeout(() => setDebugMessage(null), 3000);
-                    return { success: true, route: result.route };
-                },
-                navigate_to_home: async () => {
-                    setDebugMessage(`Navigating home...`);
-                    handleAlfredNavigation("/");
-                    setTimeout(() => setDebugMessage(null), 3000);
-                    return { success: true, route: "/" };
-                },
-                navigate_to_documents: async () => {
-                    setDebugMessage(`Navigating to documents...`);
-                    handleAlfredNavigation("/documents");
-                    setTimeout(() => setDebugMessage(null), 3000);
-                    return { success: true, route: "/documents" };
-                },
-
-                // Herramientas de WhatsApp
+                // WhatsApp Tools (Powered by WhatsAppService)
                 read_whatsapp_messages: async () => {
-                    console.log("[ALFRED] read_whatsapp_messages invoked");
-                    setDebugMessage(`Buscando nuevos mensajes en WhatsApp...`);
-                    setTimeout(() => setDebugMessage(null), 4000);
-                    return {
-                        success: true,
-                        messages: [
-                            { from: "Juan Pérez", text: "Hola, me interesa la propiedad en Recoleta." },
-                            { from: "María García", text: "¿Cuándo podemos visitar el de Palermo?" }
-                        ]
-                    };
+                    setCurrentAction({
+                        title: "Leyendo WhatsApp",
+                        description: "Buscando mensajes nuevos...",
+                        icon: "whatsapp"
+                    });
+                    const messages = await WhatsAppService.getPendingMessages();
+                    setTimeout(() => setCurrentAction(null), 4000);
+                    return { success: true, messages };
                 },
                 send_whatsapp_message: async (params: { to: string, message: string }) => {
-                    console.log("[ALFRED] send_whatsapp_message invoked:", params);
-                    setDebugMessage(`Enviando WhatsApp a ${params.to}...`);
-                    setTimeout(() => {
-                        setDebugMessage(`¡Mensaje enviado a ${params.to}!`);
-                        setTimeout(() => setDebugMessage(null), 2000);
-                    }, 2000);
+                    setCurrentAction({
+                        title: "Enviando Mensaje",
+                        description: `Destino: ${params.to}`,
+                        icon: "whatsapp"
+                    });
+                    await WhatsAppService.sendMessage(params.to, params.message);
+                    setCurrentAction({
+                        title: "¡Mensaje Enviado!",
+                        description: `Se notificó a ${params.to}`,
+                        icon: "whatsapp"
+                    });
+                    setTimeout(() => setCurrentAction(null), 3000);
                     return { success: true };
                 },
 
-                // Nueva Tool: Integración CRM
+                // CRM Tools (Powered by CRMService)
                 start_crm_integration: async (params: any) => {
-                    const crm = params.crm_name || "su CRM";
-                    console.log("[ALFRED] start_crm_integration invoked for:", crm);
-                    setDebugMessage(`Iniciando conexión con ${crm}...`);
+                    const crm = params.crm_name as CRMType || "Remax";
+                    setCurrentAction({
+                        title: "Conexión CRM",
+                        description: `Vinculando con ${crm}...`,
+                        icon: "crm"
+                    });
                     handleAlfredNavigation("/profile");
-
-                    // Alfred narrará la guía a través del prompt del sistema
-                    setTimeout(() => setDebugMessage(null), 4000);
+                    await CRMService.connect(crm);
+                    setTimeout(() => setCurrentAction(null), 4000);
                     return { success: true, crm: crm };
                 },
 
-                // Nueva Tool: Escaneo de Documentos
+                // Document Tools (Powered by DocumentService)
                 start_document_scan: async () => {
-                    console.log("[ALFRED] start_document_scan invoked");
-                    setDebugMessage(`Abriendo cámara para escaneo...`);
+                    setCurrentAction({
+                        title: "Iniciando Escáner",
+                        description: "Preparando cámara...",
+                        icon: "document"
+                    });
+                    await DocumentService.startScan();
                     handleAlfredNavigation("/documents?action=scan");
-
-                    // Simular apertura de cámara a través de navegación
-                    setTimeout(() => setDebugMessage(null), 4000);
+                    setTimeout(() => setCurrentAction(null), 4000);
                     return { success: true };
                 },
-
-                // Nueva Tool: Guardar Documento (después del escaneo)
                 save_scanned_document: async (params: any) => {
                     const name = params.document_name;
-                    console.log("[ALFRED] save_scanned_document invoked:", name);
-                    setDebugMessage(`Guardando documento: ${name}...`);
-
-                    setTimeout(() => {
-                        setDebugMessage(`¡Documento "${name}" guardado!`);
-                        setTimeout(() => setDebugMessage(null), 2000);
-                    }, 2000);
-
+                    setCurrentAction({
+                        title: "Guardando Documento",
+                        description: `Archivo: ${name}`,
+                        icon: "document"
+                    });
+                    await DocumentService.saveDocument(name);
+                    setCurrentAction({
+                        title: "¡Documento Guardado!",
+                        description: `${name} ya está en tu nube.`,
+                        icon: "document"
+                    });
+                    setTimeout(() => setCurrentAction(null), 3000);
                     return { success: true, name: name };
                 },
 
-                // Nueva Tool: Datos para narración
+                // Utility Tools
                 get_summary_data: async (params: any) => {
-                    console.log("[ALFRED] get_summary_data invoked", params);
-                    setDebugMessage(`Fetching summary data...`);
+                    setDebugMessage("Obteniendo resumen...");
                     setTimeout(() => setDebugMessage(null), 2000);
                     return {
                         success: true,
@@ -188,27 +173,21 @@ export default function VoiceFAB() {
                 connectionType: "webrtc",
                 clientTools: clientTools,
                 onConnect: () => {
-                    console.log("[VoiceFAB] Conversación conectada con tools");
                     setDebugMessage("¡Conectado! Ya puedes hablar.");
                     setStatus("listening");
-                    // Ocultar mensaje de éxito después de un momento
                     setTimeout(() => setDebugMessage(null), 2500);
                 },
                 onDisconnect: () => {
-                    console.log("[VoiceFAB] Sesión terminada");
                     setDebugMessage("Sesión finalizada");
                     setStatus("idle");
                     setTimeout(() => setDebugMessage(null), 2000);
                 },
                 onError: (error) => {
                     console.error("ALFRED error:", error);
-                    const err = error as any;
-                    const errorMsg = typeof err === 'string' ? err : err.message || "Error de conexión";
-                    setDebugMessage(`ALFRED Error: ${errorMsg}`);
+                    setDebugMessage(`ALFRED Error: ${(error as any).message || "Error"}`);
                     setStatus("idle");
                 },
                 onModeChange: (mode) => {
-                    console.log("[VoiceFAB] Mode change:", mode.mode);
                     if (mode.mode === "speaking") {
                         setStatus("responding");
                         playSubtleFeedback();
@@ -408,6 +387,37 @@ export default function VoiceFAB() {
                     </motion.button>
                 </div>
             </motion.div>
+
+            {/* Action Preview Card - Antigravity Pillar 4: Reliability */}
+            <AnimatePresence>
+                {currentAction && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                        className="fixed bottom-64 left-1/2 transform -translate-x-1/2 z-[200] w-[280px]"
+                    >
+                        <div className="bg-zinc-950/80 backdrop-blur-3xl border border-white/20 rounded-3xl p-5 shadow-2xl overflow-hidden relative group">
+                            {/* Animated Background Pulse */}
+                            <div className="absolute inset-0 bg-emerald-500/5 animate-pulse" />
+
+                            <div className="relative flex flex-col items-center text-center space-y-3">
+                                <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-emerald-400">
+                                    {currentAction.icon === "whatsapp" && <MessageSquare size={24} />}
+                                    {currentAction.icon === "document" && <FileText size={24} />}
+                                    {currentAction.icon === "crm" && <LinkIcon size={24} />}
+                                    {currentAction.icon === "nav" && <Compass size={24} />}
+                                    {!currentAction.icon && <AlertCircle size={24} />}
+                                </div>
+                                <div className="space-y-1">
+                                    <h3 className="text-sm font-bold text-white uppercase tracking-wider">{currentAction.title}</h3>
+                                    <p className="text-xs text-zinc-500 line-clamp-2 px-2">{currentAction.description}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Optional: Status label that appears near FAB */}
             <AnimatePresence>
